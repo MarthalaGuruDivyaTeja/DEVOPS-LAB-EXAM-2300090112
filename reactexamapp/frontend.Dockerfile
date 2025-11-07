@@ -1,22 +1,27 @@
 # ---- Stage 1: Build ----
-FROM node:20-alpine AS build
+FROM node:18-alpine AS build
+
 WORKDIR /app
 
+# Copy package.json and package-lock.json first
 COPY package*.json ./
 
-RUN npm install
+# Install dependencies
+RUN npm ci
 
-# Ensure vite binary is executable
-RUN chmod +x node_modules/.bin/vite
-
+# Copy rest of the source code
 COPY . .
+
+# Build the app
 RUN npm run build
 
 # ---- Stage 2: Serve ----
 FROM nginx:alpine
-# Copy custom nginx config
+
+# Copy custom nginx config if needed
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-# Copy built files
+
+# Copy built files from previous stage
 COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
